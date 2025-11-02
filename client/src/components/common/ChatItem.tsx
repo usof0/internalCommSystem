@@ -10,7 +10,7 @@ function ChatItem({avatarUrl, className}: ChatItemProps) {
     return (
         <div className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${className}`}>
             <Avatar src={avatarUrl} />
-            <ChatPreview className={`bg-blue-200`}/>
+            <ChatPreview className={``}/>
         </div>
     )
 }
