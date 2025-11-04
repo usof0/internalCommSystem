@@ -7,7 +7,7 @@ type AvatarProps = {
 
 function Avatar({ src, alt = "User Avatar", className }: AvatarProps) {
     return (
-        <div className={`w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center ${className}`}>
+        <div className={className}>
             {src ? (
                 <img src={src} alt={alt} className="w-full h-full object-cover"/>
             ) : (
