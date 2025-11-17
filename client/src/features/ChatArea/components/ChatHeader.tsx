@@ -1,4 +1,4 @@
-import Avatar from "../common/Avatar";
+import { Avatar } from "@/shared/components";
 
 import { MagnifyingGlassIcon, EllipsisVerticalIcon } from '@heroicons/react/24/solid';
 

@@ -1,0 +1,118 @@
+{
+  "users": [
+    {
+      "userid": 1,
+      "name": "Mohsen Ali",
+      "userType": "student",
+      "avatarUrl": "https://i.pravatar.cc/150?img=1",
+      "numUnread":12,
+      "status": "online",
+      "favorite": false,
+      "lastMessage": {
+        "messageid": 101,
+        "firstFewLetters": "Hello, professor. I have a question about...",
+        "time": "2025-11-17T10:24:00Z",
+        "delivered": true,
+        "read": true
+      }
+    },
+    {
+      "userid": 2,
+      "name": "Dr. Ahmed Kareem",
+      "userType": "teacher",
+      "avatarUrl": "https://i.pravatar.cc/150?img=2",
+      "numUnread":34,
+      "status": "offline",
+      "favorite": true,
+      "lastMessage": {
+        "messageid": 102,
+        "firstFewLetters": "Please submit your weekly assignment...",
+        "time": "2025-11-16T14:50:00Z",
+        "delivered": true,
+        "read": false
+      }
+    },
+    {
+      "userid": 3,
+      "name": "System Admin",
+      "userType": "admin",
+      "avatarUrl": "https://i.pravatar.cc/150?img=3",
+      "numUnread":9,
+      "status": "busy",
+      "favorite": false,
+      "lastMessage": {
+        "messageid": 103,
+        "firstFewLetters": "Your access permissions were updated",
+        "time": "2025-11-15T09:10:00Z",
+        "delivered": true,
+        "read": true
+      }
+    }
+  ],
+
+  "folders": [
+    {
+      "id": 1,
+      "name": "FFFFFF1",
+      "users": [
+        { "userid": 1 },
+        { "userid": 2 }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "FFFFF2",
+      "users": [
+        { "userid": 2 },
+        { "userid": 3 }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "FFFFF3",
+      "users": [
+        { "userid": 1 },
+        { "userid": 3 }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "FFFFFF5",
+      "users": [
+        { "userid": 3 }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "F6",
+      "users": [
+        { "userid": 2 }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "F6",
+      "users": [
+        { "userid": 1 },
+        { "userid": 3 }
+
+      ]
+    },
+    {
+      "id": 7,
+      "name": "F7",
+      "users": [
+        { "userid": 1 }
+
+      ]
+    },
+    {
+      "id": 8,
+      "name": "F8",
+      "users": [
+        { "userid": 2 },
+        { "userid": 3 }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid'
+import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
 
 type SearchBarProps = {
     className?: string;

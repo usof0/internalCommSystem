@@ -1,11 +1,12 @@
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
 
-import ChatArea from './components/ChatArea/ChatArea';
-import Sidebar from './components/Sidebar/Sidebar';
-
+import { ChatArea } from '@/features/ChatArea';
+import { Sidebar } from '@/features/Sidebar';
+import './App.css'
 
 
 function App() {
-  // const [count, setCount] = useState(0)
 
   return (
     <div className="flex flex-row max-h-screen max-w-screen">
@@ -14,7 +15,8 @@ function App() {
       <ChatArea className="flex flex-col grow"/>
     </div>
 
-  )
+  );
+  // return <RouterProvider router={ router }/>
 }
 
 export default App;
