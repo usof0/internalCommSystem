@@ -1,1 +1,1 @@
-# universityMessenger
+# Internal communication system
