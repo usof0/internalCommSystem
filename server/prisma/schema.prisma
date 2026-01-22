@@ -26,6 +26,13 @@ model User {
   deletedAt    DateTime?
 
   roles        UserRole[]
+  messages     Message[]
+  createdRooms Room[]
+  createdTopics Topic[]
+  readMessages  UserReadMessage[]
+  receivedMessages UserReceiveMessage[]
+  topicVisibilities TopicVisibility[]
+  roomMemberships UserRoomMembership[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -86,3 +93,149 @@ model RolePermission {
   @@index([permissionId])
 }
 
+//
+model Room {
+  id          String   @id @default(uuid()) @db.Uuid
+  creatorId   String   @db.Uuid
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  creator     User     @relation(fields: [creatorId], references: [id])
+  topics      Topic[]
+  memberships UserRoomMembership[]
+
+  @@index([creatorId])
+}
+
+model Topic {
+  id          String   @id @default(uuid()) @db.Uuid
+  roomId      String   @db.Uuid
+  creatorId   String   @db.Uuid
+  title       String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  creator     User     @relation(fields: [creatorId], references: [id])
+  messages    Message[]
+  visibility  TopicVisibility[]
+
+  @@index([roomId])
+  @@index([creatorId])
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  topicId   String   @db.Uuid
+  authorId  String   @db.Uuid
+  parentId  String?  @db.Uuid
+  content   String
+  level     Int
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+  parent    Message? @relation("MessageToMessage", fields: [parentId], references: [id])
+  replies   Message[] @relation("MessageToMessage")
+
+  readBy     UserReadMessage[]
+  receivedBy UserReceiveMessage[]
+
+  @@index([topicId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model TopicVisibility {
+  userId  String @db.Uuid
+  topicId String @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([userId, topicId])
+  @@index([topicId])
+}
+
+model UserReadMessage {
+  userId    String   @db.Uuid
+  messageId String   @db.Uuid
+  readAt    DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@index([messageId])
+}
+
+model UserReceiveMessage {
+  userId     String   @db.Uuid
+  messageId  String   @db.Uuid
+  receivedAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@index([messageId])
+}
+
+
+model RoomRole {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+
+  memberships         UserRoomMembership[]
+  roleRoomPermissions RoleRoomPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RoomPermission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  description String?
+
+  roleRoomPermissions RoleRoomPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RoleRoomPermission {
+  roomRoleId       String @db.Uuid
+  roomPermissionId String @db.Uuid
+
+  roomRole       RoomRole       @relation(fields: [roomRoleId], references: [id], onDelete: Cascade)
+  roomPermission RoomPermission @relation(fields: [roomPermissionId], references: [id], onDelete: Cascade)
+
+  @@id([roomRoleId, roomPermissionId])
+  @@index([roomPermissionId])
+}
+
+model UserRoomMembership {
+  userId     String @db.Uuid
+  roomId     String @db.Uuid
+  roomRoleId String @db.Uuid
+  joinedAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomRole RoomRole @relation(fields: [roomRoleId], references: [id])
+
+  @@id([userId, roomId])
+  @@index([roomId])
+  @@index([roomRoleId])
+}
