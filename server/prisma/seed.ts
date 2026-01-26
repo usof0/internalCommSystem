@@ -22,6 +22,7 @@ async function main() {
     { code: "poll.create", module: "polls", description: "Create polls" },
   ];
 
+
   // Upsert permissions
   for (const p of permissions) {
     await prisma.permission.upsert({
@@ -60,6 +61,89 @@ async function main() {
     roles: [adminRole.name, userRole.name],
     permissions: permissions.map((p) => p.code),
   });
+
+  // 1.1) Room-level permissions
+  const roomPermissions = [
+    { code: "room.topic.create", description: "Create topics in room" },
+    { code: "room.message.create", description: "Create messages in room" },
+    { code: "room.message.delete", description: "Delete messages in room" },
+    { code: "room.member.invite", description: "Invite users to room" },
+    { code: "room.member.kick", description: "Remove users from room" },
+    { code: "room.settings.manage", description: "Manage room settings" },
+  ];
+
+  for (const p of roomPermissions) {
+    await prisma.roomPermission.upsert({
+      where: { code: p.code },
+      update: { description: p.description },
+      create: p,
+    });
+  }
+
+  // 2.1) Room roles
+  const ownerRole = await prisma.roomRole.upsert({
+    where: { name: "owner" },
+    update: { description: "Room owner" },
+    create: { name: "owner", description: "Room owner" },
+  });
+
+  const moderatorRole = await prisma.roomRole.upsert({
+    where: { name: "moderator" },
+    update: { description: "Room moderator" },
+    create: { name: "moderator", description: "Room moderator" },
+  });
+
+  const memberRole = await prisma.roomRole.upsert({
+    where: { name: "member" },
+    update: { description: "Room member" },
+    create: { name: "member", description: "Room member" },
+  });
+
+  // 2.2) Fetch room permissions
+  const allRoomPerms = await prisma.roomPermission.findMany({
+    select: { id: true, code: true },
+  });
+
+  const byCode = Object.fromEntries(
+    allRoomPerms.map((p) => [p.code, p.id]),
+  );
+
+  // 2.3.1) Helper to assign permissions
+  async function setRoomRolePermissions(
+    roleId: string,
+    permissionCodes: string[],
+  ) {
+    await prisma.roleRoomPermission.deleteMany({
+      where: { roomRoleId: roleId },
+    });
+
+    await prisma.roleRoomPermission.createMany({
+      data: permissionCodes.map((code) => ({
+        roomRoleId: roleId,
+        roomPermissionId: byCode[code],
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  // 2.3.2) owner → all permissions
+  await setRoomRolePermissions(
+    ownerRole.id,
+    roomPermissions.map((p) => p.code),
+  );
+
+  // 2.3.3) moderator → limited set
+  await setRoomRolePermissions(moderatorRole.id, [
+    "room.topic.create",
+    "room.message.create",
+    "room.message.delete",
+    "room.member.invite",
+  ]);
+
+  // 2.3.4) member → basic permissions
+  await setRoomRolePermissions(memberRole.id, [
+    "room.message.create",
+  ]);
 }
 
 main()
