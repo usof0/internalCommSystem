@@ -7,32 +7,32 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique @db.VarChar(320)
-  passwordHash String   @db.VarChar(255)
+  id           String @id @default(uuid()) @db.Uuid
+  email        String @unique @db.VarChar(320)
+  passwordHash String @db.VarChar(255)
 
-  firstName    String?  @db.VarChar(100)
-  secondName   String?  @db.VarChar(100)
-  lastName     String?  @db.VarChar(100)
-  displayName  String?  @db.VarChar(160)
-  avatarUrl    String?  @db.VarChar(2048)
+  firstName   String? @db.VarChar(100)
+  secondName  String? @db.VarChar(100)
+  lastName    String? @db.VarChar(100)
+  displayName String? @db.VarChar(160)
+  avatarUrl   String? @db.VarChar(2048)
 
-  isActive     Boolean  @default(true)
-  isBlocked    Boolean  @default(false)
-  blockedAt    DateTime?
+  isActive  Boolean   @default(true)
+  isBlocked Boolean   @default(false)
+  blockedAt DateTime?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deletedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  roles        UserRole[]
-  messages     Message[]
-  createdRooms Room[]
-  createdTopics Topic[]
-  readMessages  UserReadMessage[]
-  receivedMessages UserReceiveMessage[]
+  roles             UserRole[]
+  messages          Message[]
+  createdRooms      Room[]
+  createdTopics     Topic[]
+  readMessages      UserReadMessage[]
+  receivedMessages  UserReceiveMessage[]
   topicVisibilities TopicVisibility[]
-  roomMemberships UserRoomMembership[]
+  roomMemberships   UserRoomMembership[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -40,37 +40,37 @@ model User {
 }
 
 model Permission {
-  id          String    @id @default(uuid()) @db.Uuid
-  code        String    @unique @db.VarChar(120)
-  description String?   @db.VarChar(255)
-  module      String?   @db.VarChar(60)
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique @db.VarChar(120)
+  description String? @db.VarChar(255)
+  module      String? @db.VarChar(60)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  roles       RolePermission[]
+  roles RolePermission[]
 }
 
 model Role {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique @db.VarChar(100)
-  description String?   @db.VarChar(255)
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  description String? @db.VarChar(255)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   users       UserRole[]
   permissions RolePermission[]
 }
 
 model UserRole {
-  userId    String    @db.Uuid
-  roleId    String    @db.Uuid
+  userId String @db.Uuid
+  roleId String @db.Uuid
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime  @default(now())
   deletedAt DateTime?
@@ -80,14 +80,14 @@ model UserRole {
 }
 
 model RolePermission {
-  roleId        String      @db.Uuid
-  permissionId  String      @db.Uuid
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
 
-  role          Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime    @default(now())
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
   @@id([roleId, permissionId])
   @@index([permissionId])
@@ -95,15 +95,16 @@ model RolePermission {
 
 //
 model Room {
-  id          String   @id @default(uuid()) @db.Uuid
-  creatorId   String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  creatorId   String    @db.Uuid
   title       String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  avatarUrl   String? @db.VarChar(2048)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  creator     User     @relation(fields: [creatorId], references: [id])
+  creator     User                 @relation(fields: [creatorId], references: [id])
   topics      Topic[]
   memberships UserRoomMembership[]
 
@@ -111,41 +112,41 @@ model Room {
 }
 
 model Topic {
-  id          String   @id @default(uuid()) @db.Uuid
-  roomId      String   @db.Uuid
-  creatorId   String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  roomId      String    @db.Uuid
+  creatorId   String    @db.Uuid
   title       String
   description String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPublic    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  creator     User     @relation(fields: [creatorId], references: [id])
-  messages    Message[]
-  visibility  TopicVisibility[]
+  room       Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  creator    User              @relation(fields: [creatorId], references: [id])
+  messages   Message[]
+  visibility TopicVisibility[]
 
   @@index([roomId])
   @@index([creatorId])
 }
 
 model Message {
-  id        String   @id @default(uuid()) @db.Uuid
-  topicId   String   @db.Uuid
-  authorId  String   @db.Uuid
-  parentId  String?  @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
+  topicId   String    @db.Uuid
+  authorId  String    @db.Uuid
+  parentId  String?   @db.Uuid
   content   String
   level     Int
-  isPinned  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isPinned  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id])
-  parent    Message? @relation("MessageToMessage", fields: [parentId], references: [id])
-  replies   Message[] @relation("MessageToMessage")
+  topic   Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Message?  @relation("MessageToMessage", fields: [parentId], references: [id])
+  replies Message[] @relation("MessageToMessage")
 
   readBy     UserReadMessage[]
   receivedBy UserReceiveMessage[]
@@ -192,8 +193,8 @@ model UserReceiveMessage {
 
 
 model RoomRole {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
   description String?
 
   memberships         UserRoomMembership[]
@@ -204,8 +205,8 @@ model RoomRole {
 }
 
 model RoomPermission {
-  id          String   @id @default(uuid()) @db.Uuid
-  code        String   @unique
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
   description String?
 
   roleRoomPermissions RoleRoomPermission[]
@@ -226,9 +227,9 @@ model RoleRoomPermission {
 }
 
 model UserRoomMembership {
-  userId     String @db.Uuid
-  roomId     String @db.Uuid
-  roomRoleId String @db.Uuid
+  userId     String   @db.Uuid
+  roomId     String   @db.Uuid
+  roomRoleId String   @db.Uuid
   joinedAt   DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
