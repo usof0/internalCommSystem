@@ -37,6 +37,8 @@ model User {
   taskParticipations  TaskParticipant[]
   createdEvents       Event[]           @relation("UserCreatedEvents")
   eventParticipations EventParticipant[]
+  createdPolls        Poll[]           @relation("UserCreatedPolls")
+  pollParticipations  PollParticipant[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -326,4 +328,49 @@ model EventParticipant {
   @@id([userId, eventId])
   @@unique([eventId, participantNumber])
   @@index([eventId])
+}
+
+
+// Poll models
+model Poll {
+  id          String   @id @default(uuid()) @db.Uuid
+  creatorId   String   @db.Uuid
+  title       String
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  creator      User             @relation("UserCreatedPolls", fields: [creatorId], references: [id])
+  options      PollOption[]
+  participants PollParticipant[]
+
+  @@index([creatorId])
+}
+
+model PollOption {
+  id        String   @id @default(uuid()) @db.Uuid
+  pollId    String   @db.Uuid
+  value     String
+  chosen    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+  @@unique([pollId, value])
+}
+
+model PollParticipant {
+  userId String @db.Uuid
+  pollId String @db.Uuid
+  done   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@id([userId, pollId])
+  @@index([pollId])
 }
