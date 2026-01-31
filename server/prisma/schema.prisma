@@ -324,6 +324,6 @@ model EventParticipant {
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([userId, eventId])
-  @@unique([participantNumber])
+  @@unique([eventId, participantNumber])
   @@index([eventId])
 }
