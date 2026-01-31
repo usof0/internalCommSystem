@@ -41,6 +41,7 @@ model User {
   pollParticipations  PollParticipant[]
   actorNotifications Notification[] @relation("UserNotificationActor")
   notificationRecipients NotificationRecipient[]
+  orgUnitMemberships UserOrgUnitMembership[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -71,6 +72,7 @@ model Role {
 
   users       UserRole[]
   permissions RolePermission[]
+  positions PositionRole[]
 }
 
 model UserRole {
@@ -366,9 +368,10 @@ model PollOption {
 }
 
 model PollParticipant {
-  userId String @db.Uuid
-  pollId String @db.Uuid
-  done   Boolean @default(false)
+  userId          String @db.Uuid
+  pollId          String @db.Uuid
+  done            Boolean @default(false)
+  chosenOptionId  String? @db.Uuid
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
@@ -420,4 +423,86 @@ model NotificationRecipient {
   @@index([userId])
   @@index([deliveredAt])
   @@index([readAt])
+}
+
+
+
+// Organization models
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  orgUnitTags OrgUnitTag[]
+}
+
+model OrgUnit {
+  id          String   @id @default(uuid()) @db.Uuid
+  parentId    String?  @db.Uuid
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  parent   OrgUnit?  @relation("OrgUnitHierarchy", fields: [parentId], references: [id])
+  children OrgUnit[] @relation("OrgUnitHierarchy")
+
+  tags        OrgUnitTag[]
+  memberships UserOrgUnitMembership[]
+
+  @@index([parentId])
+  @@unique([parentId, name])
+}
+
+model OrgUnitTag {
+  orgUnitId String  @db.Uuid
+  tagId     String  @db.Uuid
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  orgUnit OrgUnit @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([orgUnitId, tagId])
+  @@index([tagId])
+}
+
+model Position {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  memberships  UserOrgUnitMembership[]
+  positionRoles PositionRole[]
+}
+
+model PositionRole {
+  positionId String @db.Uuid
+  roleId     String @db.Uuid
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  role     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([positionId, roleId])
+  @@index([roleId])
+}
+
+model UserOrgUnitMembership {
+  userId     String @db.Uuid
+  orgUnitId  String @db.Uuid
+  positionId String @db.Uuid
+  joinedAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgUnit  OrgUnit  @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, orgUnitId, positionId])
+  @@index([orgUnitId])
+  @@index([positionId])
 }
