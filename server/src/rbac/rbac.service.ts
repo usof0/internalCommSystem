@@ -137,4 +137,71 @@ export class RbacService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  // room RBAC
+  async getUserRoomPermissionCodes(userId: string, roomId: string): Promise<Set<string>> {
+    const membership = await this.prisma.userRoomMembership.findUnique({
+      where: { userId_roomId: { userId, roomId } },
+      select: {
+        roomRole: {
+          select: {
+            roleRoomPermissions: {
+              select: {
+                roomPermission: { select: { code: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!membership) return new Set<string>();
+
+    const codes = new Set<string>();
+    for (const rrp of membership.roomRole.roleRoomPermissions) {
+      codes.add(rrp.roomPermission.code);
+    }
+    return codes;
+  }
+
+  async userHasRoomPermission(userId: string, roomId: string, permissionCode: string): Promise<boolean> {
+    const codes = await this.getUserRoomPermissionCodes(userId, roomId);
+    return codes.has(permissionCode);
+  }
+
+  listRoomRoles() {
+    return this.prisma.roomRole.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, description: true, createdAt: true, updatedAt: true },
+    });
+  }
+  
+  async addPermissionsToRoomRole(roleId: string, permissionIds: string[]) {
+    const role = await this.prisma.roomRole.findUnique({ where: { id: roleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Room role not found');
+    const perms = await this.prisma.roomPermission.findMany({
+      where: { id: { in: permissionIds } },
+      select: { id: true },
+    });
+
+    if (perms.length !== permissionIds.length) {
+      const found = new Set(perms.map(p => p.id));
+      const missing = permissionIds.filter(c => !found.has(c));
+      throw new NotFoundException(`Room permissions not found: ${missing.join(', ')}`);
+    }
+
+    await this.prisma.roleRoomPermission.createMany({
+      data: perms.map(p => ({ roomRoleId: roleId, roomPermissionId: p.id })),
+      skipDuplicates: true,
+    });
+
+    return this.listRoomRoles();
+  }
+
+  async removePermissionFromRoomRole(roleId: string, permissionId: string) {
+    await this.prisma.roleRoomPermission.deleteMany({
+      where: { roomRoleId: roleId, roomPermissionId: permissionId },
+    });
+    return this.listRoomRoles();
+  }
 }
