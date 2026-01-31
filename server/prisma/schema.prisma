@@ -25,14 +25,16 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  roles             UserRole[]
-  messages          Message[]
-  createdRooms      Room[]
-  createdTopics     Topic[]
-  readMessages      UserReadMessage[]
-  receivedMessages  UserReceiveMessage[]
-  topicVisibilities TopicVisibility[]
-  roomMemberships   UserRoomMembership[]
+  roles               UserRole[]
+  messages            Message[]
+  createdRooms        Room[]
+  createdTopics       Topic[]
+  readMessages        UserReadMessage[]
+  receivedMessages    UserReceiveMessage[]
+  topicVisibilities   TopicVisibility[]
+  roomMemberships     UserRoomMembership[]
+  tasks               Task[]
+  taskParticipations  TaskParticipant[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -239,4 +241,52 @@ model UserRoomMembership {
   @@id([userId, roomId])
   @@index([roomId])
   @@index([roomRoleId])
+}
+
+
+// Task model
+enum TaskWorkStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  SUBMITTED
+  DECLINED
+}
+
+enum TaskReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Task {
+  id          String   @id @default(uuid()) @db.Uuid
+  creatorId   String   @db.Uuid
+  title       String
+  description String
+  dueDate     DateTime? @db.Date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  creator      User              @relation(fields: [creatorId], references: [id])
+  participants TaskParticipant[]
+
+  @@index([creatorId])
+  @@index([dueDate])
+}
+
+model TaskParticipant {
+  userId       String @db.Uuid
+  taskId       String @db.Uuid
+
+  workStatus   TaskWorkStatus
+  reviewStatus TaskReviewStatus @default(PENDING)
+  rating       Int?
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task         Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskId])
+  @@index([taskId])
 }
