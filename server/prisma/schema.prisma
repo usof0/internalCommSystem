@@ -33,8 +33,10 @@ model User {
   receivedMessages    UserReceiveMessage[]
   topicVisibilities   TopicVisibility[]
   roomMemberships     UserRoomMembership[]
-  tasks               Task[]
+  createdTasks        Task[]          @relation("UserCreatedTask")
   taskParticipations  TaskParticipant[]
+  createdEvents       Event[]           @relation("UserCreatedEvents")
+  eventParticipations EventParticipant[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -95,7 +97,7 @@ model RolePermission {
   @@index([permissionId])
 }
 
-//
+// Chat models
 model Room {
   id          String    @id @default(uuid()) @db.Uuid
   creatorId   String    @db.Uuid
@@ -244,7 +246,7 @@ model UserRoomMembership {
 }
 
 
-// Task model
+// Task models
 enum TaskWorkStatus {
   PENDING
   ACCEPTED
@@ -269,7 +271,7 @@ model Task {
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
 
-  creator      User              @relation(fields: [creatorId], references: [id])
+  creator      User              @relation("UserCreatedTask",fields: [creatorId], references: [id])
   participants TaskParticipant[]
 
   @@index([creatorId])
@@ -289,4 +291,39 @@ model TaskParticipant {
 
   @@id([userId, taskId])
   @@index([taskId])
+}
+
+// Event models
+model Event {
+  id          String   @id @default(uuid()) @db.Uuid
+  creatorId   String   @db.Uuid
+  title       String
+  description String   @db.Text
+  address     String
+  timeStart   DateTime
+  timeEnd     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  creator      User              @relation("UserCreatedEvents", fields: [creatorId], references: [id])
+  participants EventParticipant[]
+
+  @@index([creatorId])
+  @@index([timeStart])
+  @@index([timeEnd])
+}
+
+model EventParticipant {
+  userId            String  @db.Uuid
+  eventId           String  @db.Uuid
+  participantNumber Int
+  confirmed         Boolean @default(false)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@unique([participantNumber])
+  @@index([eventId])
 }
