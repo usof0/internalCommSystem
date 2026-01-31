@@ -39,6 +39,8 @@ model User {
   eventParticipations EventParticipant[]
   createdPolls        Poll[]           @relation("UserCreatedPolls")
   pollParticipations  PollParticipant[]
+  actorNotifications Notification[] @relation("UserNotificationActor")
+  notificationRecipients NotificationRecipient[]
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
@@ -373,4 +375,49 @@ model PollParticipant {
 
   @@id([userId, pollId])
   @@index([pollId])
+}
+
+
+// Notification models
+enum NotificationEntityType {
+  ROOM
+  TOPIC
+  MESSAGE
+  TASK
+  EVENT
+  POLL
+}
+
+model Notification {
+  id         String   @id @default(uuid()) @db.Uuid
+  type       String
+  title      String
+  body       String   @db.Text
+  actorId    String?  @db.Uuid
+  entityType NotificationEntityType
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  actor      User?                   @relation("UserNotificationActor", fields: [actorId], references: [id])
+  recipients NotificationRecipient[]
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+}
+
+model NotificationRecipient {
+  notificationId String   @db.Uuid
+  userId         String   @db.Uuid
+
+  deliveredAt DateTime?
+  readAt      DateTime?
+  isHidden    Boolean  @default(false)
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+  @@index([deliveredAt])
+  @@index([readAt])
 }
