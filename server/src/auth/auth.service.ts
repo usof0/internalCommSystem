@@ -53,7 +53,6 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     if (user.deletedAt) throw new UnauthorizedException('Invalid credentials');
-    console.log(email);
     if (!user.isActive || user.isBlocked) throw new ForbiddenException('Account is disabled');
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
