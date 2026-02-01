@@ -1,7 +1,8 @@
-import { IsArray, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
 
 export class AddRoomRolePermissionsDto {
   @IsArray()
+  @ArrayNotEmpty()
   @IsString({ each: true })
-  permissionIds: string[];
+  permissionCodes: string[];
 }

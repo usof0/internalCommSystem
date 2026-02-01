@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RbacService {
@@ -39,7 +39,13 @@ export class RbacService {
   }
 
   // Roles
-  createRole(data: { name: string; description?: string }) {
+  async createRole(data: { name: string; description?: string }) {
+    const existing = await this.prisma.role.findUnique({
+      where: { name: data.name },
+      select: { id: true },
+    });
+    if (existing) throw new ConflictException('Role name already exists');
+
     return this.prisma.role.create({ data });
   }
 
@@ -53,10 +59,32 @@ export class RbacService {
   async getRole(roleId: string) {
     const role = await this.prisma.role.findUnique({
       where: { id: roleId },
-      include: { permissions: { include: { permission: true } } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+        permissions: {
+          where: { deletedAt: null },
+          select: {
+            permission: {
+              select: { id: true, code: true, module: true, description: true },
+            },
+          },
+        },
+      },
     });
     if (!role) throw new NotFoundException('Role not found');
-    return role;
+
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      createdAt: role.createdAt,
+      updatedAt: role.updatedAt,
+      permissions: role.permissions.map((rp) => rp.permission),
+    };
   }
 
   async addPermissionsToRole(roleId: string, permissionCodes: string[]) {
@@ -69,13 +97,13 @@ export class RbacService {
     });
 
     if (perms.length !== permissionCodes.length) {
-      const found = new Set(perms.map(p => p.code));
-      const missing = permissionCodes.filter(c => !found.has(c));
-      throw new NotFoundException(`Permissions not found: ${missing.join(', ')}`);
+      const found = new Set(perms.map((p) => p.code));
+      const unknown = permissionCodes.filter((c) => !found.has(c));
+      throw new BadRequestException(`Unknown permission codes: ${unknown.join(', ')}`);
     }
 
     await this.prisma.rolePermission.createMany({
-      data: perms.map(p => ({ roleId, permissionId: p.id })),
+      data: perms.map((p) => ({ roleId, permissionId: p.id })),
       skipDuplicates: true,
     });
 
@@ -83,21 +111,27 @@ export class RbacService {
   }
 
   async removePermissionFromRole(roleId: string, permissionId: string) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Role not found');
+
+    const permission = await this.prisma.permission.findUnique({
+      where: { id: permissionId },
+      select: { id: true },
+    });
+    if (!permission) throw new NotFoundException('Permission not found');
+
     await this.prisma.rolePermission.deleteMany({
       where: { roleId, permissionId },
     });
+
     return this.getRole(roleId);
   }
 
-  // // Permissions
-  // createPermission(data: { code: string; description?: string }) {
-  //   return this.prisma.permission.create({ data });
-  // }
-
+  // Permissions
   listPermissions() {
     return this.prisma.permission.findMany({
       orderBy: { code: 'asc' },
-      select: { id: true, code: true, description: true, createdAt: true, updatedAt: true },
+      select: { id: true, code: true, module: true, description: true, createdAt: true, updatedAt: true },
     });
   }
 
@@ -112,13 +146,13 @@ export class RbacService {
     });
 
     if (roles.length !== roleNames.length) {
-      const found = new Set(roles.map(r => r.name));
-      const missing = roleNames.filter(c => !found.has(c));
-      throw new NotFoundException(`Roles not found: ${missing.join(', ')}`);
+      const found = new Set(roles.map((r) => r.name));
+      const unknown = roleNames.filter((c) => !found.has(c));
+      throw new BadRequestException(`Unknown role names: ${unknown.join(', ')}`);
     }
 
     await this.prisma.userRole.createMany({
-      data: roles.map(r => ({ userId, roleId: r.id })),
+      data: roles.map((r) => ({ userId, roleId: r.id })),
       skipDuplicates: true,
     });
 
@@ -126,11 +160,20 @@ export class RbacService {
   }
 
   async removeRoleFromUser(userId: string, roleId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const role = await this.prisma.role.findUnique({ where: { id: roleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Role not found');
+
     await this.prisma.userRole.deleteMany({ where: { userId, roleId } });
     return this.listUserRoles(userId);
   }
 
-  listUserRoles(userId: string) {
+  async listUserRoles(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new NotFoundException('User not found');
+
     return this.prisma.userRole.findMany({
       where: { userId },
       include: { role: true },
@@ -138,7 +181,7 @@ export class RbacService {
     });
   }
 
-  // room RBAC
+  // Room RBAC — runtime helpers
   async getUserRoomPermissionCodes(userId: string, roomId: string): Promise<Set<string>> {
     const membership = await this.prisma.userRoomMembership.findUnique({
       where: { userId_roomId: { userId, roomId } },
@@ -169,39 +212,143 @@ export class RbacService {
     return codes.has(permissionCode);
   }
 
-  listRoomRoles() {
-    return this.prisma.roomRole.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, description: true, createdAt: true, updatedAt: true },
-    });
+  // Room RBAC — admin definitions
+  private formatRoomRole(role: {
+    id: string;
+    name: string;
+    description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    roleRoomPermissions: { roomPermission: { id: string; code: string; description: string | null } }[];
+  }) {
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      createdAt: role.createdAt,
+      updatedAt: role.updatedAt,
+      permissions: role.roleRoomPermissions.map((rrp) => rrp.roomPermission),
+    };
   }
-  
-  async addPermissionsToRoomRole(roleId: string, permissionIds: string[]) {
-    const role = await this.prisma.roomRole.findUnique({ where: { id: roleId }, select: { id: true } });
-    if (!role) throw new NotFoundException('Room role not found');
-    const perms = await this.prisma.roomPermission.findMany({
-      where: { id: { in: permissionIds } },
+
+  async createRoomRole(data: { name: string; description?: string }) {
+    const existing = await this.prisma.roomRole.findUnique({
+      where: { name: data.name },
       select: { id: true },
     });
+    if (existing) throw new ConflictException('Room role name already exists');
 
-    if (perms.length !== permissionIds.length) {
-      const found = new Set(perms.map(p => p.id));
-      const missing = permissionIds.filter(c => !found.has(c));
-      throw new NotFoundException(`Room permissions not found: ${missing.join(', ')}`);
+    const role = await this.prisma.roomRole.create({
+      data,
+      select: {
+        id: true, name: true, description: true, createdAt: true, updatedAt: true,
+        roleRoomPermissions: {
+          select: { roomPermission: { select: { id: true, code: true, description: true } } },
+        },
+      },
+    });
+
+    return this.formatRoomRole(role);
+  }
+
+  async updateRoomRole(roomRoleId: string, data: { name?: string; description?: string }) {
+    const role = await this.prisma.roomRole.findUnique({ where: { id: roomRoleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Room role not found');
+
+    if (data.name) {
+      const existing = await this.prisma.roomRole.findUnique({
+        where: { name: data.name },
+        select: { id: true },
+      });
+      if (existing && existing.id !== roomRoleId) {
+        throw new ConflictException('Room role name already exists');
+      }
+    }
+
+    const updated = await this.prisma.roomRole.update({
+      where: { id: roomRoleId },
+      data,
+      select: {
+        id: true, name: true, description: true, createdAt: true, updatedAt: true,
+        roleRoomPermissions: {
+          select: { roomPermission: { select: { id: true, code: true, description: true } } },
+        },
+      },
+    });
+
+    return this.formatRoomRole(updated);
+  }
+
+  async listRoomRoles() {
+    const roles = await this.prisma.roomRole.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, name: true, description: true, createdAt: true, updatedAt: true,
+        roleRoomPermissions: {
+          select: { roomPermission: { select: { id: true, code: true, description: true } } },
+        },
+      },
+    });
+
+    return roles.map((r) => this.formatRoomRole(r));
+  }
+
+  async getRoomRole(roomRoleId: string) {
+    const role = await this.prisma.roomRole.findUnique({
+      where: { id: roomRoleId },
+      select: {
+        id: true, name: true, description: true, createdAt: true, updatedAt: true,
+        roleRoomPermissions: {
+          select: { roomPermission: { select: { id: true, code: true, description: true } } },
+        },
+      },
+    });
+    if (!role) throw new NotFoundException('Room role not found');
+
+    return this.formatRoomRole(role);
+  }
+
+  listRoomPermissions() {
+    return this.prisma.roomPermission.findMany({
+      orderBy: { code: 'asc' },
+      select: { id: true, code: true, description: true, createdAt: true, updatedAt: true },
+    });
+  }
+
+  async addPermissionsToRoomRole(roomRoleId: string, permissionCodes: string[]) {
+    const role = await this.prisma.roomRole.findUnique({ where: { id: roomRoleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Room role not found');
+
+    const perms = await this.prisma.roomPermission.findMany({
+      where: { code: { in: permissionCodes } },
+      select: { id: true, code: true },
+    });
+
+    if (perms.length !== permissionCodes.length) {
+      const found = new Set(perms.map((p) => p.code));
+      const unknown = permissionCodes.filter((c) => !found.has(c));
+      throw new BadRequestException(`Unknown room permission codes: ${unknown.join(', ')}`);
     }
 
     await this.prisma.roleRoomPermission.createMany({
-      data: perms.map(p => ({ roomRoleId: roleId, roomPermissionId: p.id })),
+      data: perms.map((p) => ({ roomRoleId, roomPermissionId: p.id })),
       skipDuplicates: true,
     });
 
-    return this.listRoomRoles();
+    return this.getRoomRole(roomRoleId);
   }
 
-  async removePermissionFromRoomRole(roleId: string, permissionId: string) {
+  async removePermissionFromRoomRole(roomRoleId: string, roomPermissionId: string) {
+    const role = await this.prisma.roomRole.findUnique({ where: { id: roomRoleId }, select: { id: true } });
+    if (!role) throw new NotFoundException('Room role not found');
+
+    const perm = await this.prisma.roomPermission.findUnique({ where: { id: roomPermissionId }, select: { id: true } });
+    if (!perm) throw new NotFoundException('Room permission not found');
+
     await this.prisma.roleRoomPermission.deleteMany({
-      where: { roomRoleId: roleId, roomPermissionId: permissionId },
+      where: { roomRoleId, roomPermissionId },
     });
-    return this.listRoomRoles();
+
+    return this.getRoomRole(roomRoleId);
   }
 }

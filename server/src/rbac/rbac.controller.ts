@@ -6,7 +6,6 @@ import { RbacService } from './rbac.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { AddRolePermissionsDto } from './dto/add-role-permissions.dto';
 import { AssignUserRolesDto } from './dto/assign-user-roles.dto';
-// import { CreatePermissionDto } from './dto/create-permission.dto';
 
 @UseGuards(JwtAuthGuard, GlobalPermissionGuard)
 @Controller('rbac')
@@ -27,30 +26,24 @@ export class RbacController {
   }
 
   @RequirePermission('rbac.roles.manage')
-  @Get('roles/:id')
-  getRole(@Param('id') id: string) {
-    return this.rbac.getRole(id);
+  @Get('roles/:roleId')
+  getRole(@Param('roleId') roleId: string) {
+    return this.rbac.getRole(roleId);
   }
 
   @RequirePermission('rbac.roles.manage')
-  @Post('roles/:id/permissions')
-  addRolePermissions(@Param('id') id: string, @Body() dto: AddRolePermissionsDto) {
-    return this.rbac.addPermissionsToRole(id, dto.permissionCodes);
+  @Post('roles/:roleId/permissions')
+  addRolePermissions(@Param('roleId') roleId: string, @Body() dto: AddRolePermissionsDto) {
+    return this.rbac.addPermissionsToRole(roleId, dto.permissionCodes);
   }
 
   @RequirePermission('rbac.roles.manage')
-  @Delete('roles/:id/permissions/:permissionId')
-  removeRolePermission(@Param('id') id: string, @Param('permissionId') permissionId: string) {
-    return this.rbac.removePermissionFromRole(id, permissionId);
+  @Delete('roles/:roleId/permissions/:permissionId')
+  removeRolePermission(@Param('roleId') roleId: string, @Param('permissionId') permissionId: string) {
+    return this.rbac.removePermissionFromRole(roleId, permissionId);
   }
 
-  // Permissions (optional create)
-//   @RequirePermission('rbac.permissions.manage')
-//   @Post('permissions')
-//   createPermission(@Body() dto: CreatePermissionDto) {
-//     return this.rbac.createPermission(dto);
-//   }
-
+  // Permissions
   @RequirePermission('rbac.permissions.manage')
   @Get('permissions')
   listPermissions() {
