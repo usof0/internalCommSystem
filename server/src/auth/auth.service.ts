@@ -61,4 +61,17 @@ export class AuthService {
     const accessToken = this.signAccessToken({ sub: user.id, email: user.email });
     return { accessToken };
   }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.users.findByIdWithHash(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) throw new UnauthorizedException('Current password is incorrect');
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.users.updatePasswordHash(userId, passwordHash);
+
+    return { ok: true };
+  }
 }
