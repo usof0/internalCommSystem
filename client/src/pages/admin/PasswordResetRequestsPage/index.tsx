@@ -1,0 +1,1 @@
+export { PasswordResetRequestsPage } from './PasswordResetRequestsPage';

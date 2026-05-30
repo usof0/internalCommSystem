@@ -1,0 +1,315 @@
+.user-details-page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-details-admin-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'main actions';
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 8%, var(--bg-secondary)),
+      var(--bg-primary)
+    );
+  box-shadow: var(--shadow-sm);
+}
+
+.user-details-admin-header__main {
+  grid-area: main;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.user-details-admin-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.user-details-admin-header__actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.05rem;
+}
+
+.user-details-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.user-details-heading {
+  min-width: 0;
+}
+
+.user-details-heading span {
+  display: inline-flex;
+  margin-bottom: 0.25rem;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.user-details-heading h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.user-details-heading p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.user-details-page .profile-content {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.user-details-page .user-details-side {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.user-details-page .profile-content > .profile-organizations {
+  grid-column: 2;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.user-details-page .profile-info {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.user-details-page .profile-section,
+.user-details-page .profile-organizations {
+  overflow: hidden;
+}
+
+.user-details-page .profile-section-header {
+  margin: -1.25rem -1.25rem 0;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 9%, var(--bg-primary));
+}
+
+.user-details-page .profile-section-header h3 {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.user-details-page .profile-info-item {
+  grid-template-columns: minmax(130px, 0.38fr) minmax(0, 1fr);
+  padding: 0.7rem 0;
+}
+
+.user-details-page .profile-actions-panel {
+  padding: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 24%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger-bg) 62%, var(--bg-secondary));
+  box-shadow: var(--shadow-sm);
+}
+
+.user-details-page .profile-actions {
+  flex-direction: column;
+  justify-content: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.user-details-page .profile-action {
+  width: 100%;
+}
+
+.user-details-page .profile-action .btn {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.user-details-page .positions-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+
+.user-details-error-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.user-confirm-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.user-confirm-title__icon {
+  display: inline-grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--selected-bg);
+  color: var(--primary);
+}
+
+.user-confirm-title--danger .user-confirm-title__icon {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.user-confirm-body {
+  padding: 0.25rem 0;
+}
+
+.user-confirm-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.user-confirm-error {
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.user-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.user-details-modal-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+}
+
+.user-details-temp-password {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.user-details-temp-password p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.user-details-temp-password__value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.user-details-temp-password code {
+  display: block;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .user-details-temp-password__value {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .user-details-admin-header {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'actions';
+  }
+
+  .user-details-admin-header__actions {
+    justify-content: flex-start;
+  }
+
+  .user-details-page .user-details-side {
+    position: static;
+  }
+
+  .user-details-page .profile-content {
+    grid-template-columns: 1fr;
+  }
+
+  .user-details-page .profile-info,
+  .user-details-page .profile-content > .profile-organizations {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .user-details-admin-header__main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .user-details-admin-header__actions,
+  .user-details-admin-header__actions .btn {
+    width: 100%;
+  }
+
+  .user-details-page .profile-section-header {
+    margin: -1rem -1rem 0;
+  }
+
+  .user-confirm-actions,
+  .user-confirm-actions .btn {
+    width: 100%;
+  }
+}

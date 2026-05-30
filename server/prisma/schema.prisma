@@ -31,21 +31,105 @@ model User {
   createdTopics       Topic[]
   readMessages        UserReadMessage[]
   receivedMessages    UserReceiveMessage[]
-  topicVisibilities   TopicVisibility[]
   roomMemberships     UserRoomMembership[]
-  createdTasks        Task[]          @relation("UserCreatedTask")
+  createdTasks        Task[]              @relation("UserCreatedTask")
   taskParticipations  TaskParticipant[]
-  createdEvents       Event[]           @relation("UserCreatedEvents")
+  createdEvents       Event[]             @relation("UserCreatedEvents")
   eventParticipations EventParticipant[]
-  createdPolls        Poll[]           @relation("UserCreatedPolls")
+  createdPolls        Poll[]              @relation("UserCreatedPolls")
   pollParticipations  PollParticipant[]
-  actorNotifications Notification[] @relation("UserNotificationActor")
+  actorNotifications  Notification[]      @relation("UserNotificationActor")
   notificationRecipients NotificationRecipient[]
-  orgUnitMemberships UserOrgUnitMembership[]
+  orgUnitMemberships  UserOrgUnitMembership[]
+  topicVisibilityMembers TopicVisibilityMember[]
+  refreshSessions     RefreshSession[]
+  passwordResetRequests PasswordResetRequest[] @relation("PasswordResetUser")
+  processedPasswordResetRequests PasswordResetRequest[] @relation("PasswordResetProcessedBy")
+  processedRegistrationRequests RegistrationRequest[] @relation("RegistrationProcessedBy")
 
   @@index([createdAt])
   @@index([isActive, isBlocked])
   @@index([deletedAt])
+}
+
+model RefreshSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String   @db.VarChar(255)
+  userAgent String?  @db.VarChar(512)
+  ipAddress String?  @db.VarChar(80)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+enum PasswordResetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  USED
+  EXPIRED
+}
+
+enum RegistrationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RegistrationRequest {
+  id           String                    @id @default(uuid()) @db.Uuid
+  email        String                    @db.VarChar(320)
+  passwordHash String                    @db.VarChar(255)
+  firstName    String?                   @db.VarChar(100)
+  secondName   String?                   @db.VarChar(100)
+  lastName     String?                   @db.VarChar(100)
+  displayName  String?                   @db.VarChar(160)
+  status       RegistrationRequestStatus @default(PENDING)
+  processedById String?                  @db.Uuid
+  processedAt   DateTime?
+  rejectReason  String?                  @db.Text
+  createdUserId String?                  @db.Uuid
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  processedBy User? @relation("RegistrationProcessedBy", fields: [processedById], references: [id])
+
+  @@index([email])
+  @@index([status])
+  @@index([processedById])
+  @@index([createdUserId])
+}
+
+model PasswordResetRequest {
+  id                    String              @id @default(uuid()) @db.Uuid
+  userId                String              @db.Uuid
+  requestedEmail        String              @db.VarChar(320)
+  reason                String?             @db.Text
+  status                PasswordResetStatus @default(PENDING)
+  temporaryPasswordHash String?             @db.VarChar(255)
+  expiresAt             DateTime
+  temporaryPasswordExpiresAt DateTime?
+  processedById         String?             @db.Uuid
+  processedAt           DateTime?
+  rejectReason          String?             @db.Text
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  user        User  @relation("PasswordResetUser", fields: [userId], references: [id], onDelete: Cascade)
+  processedBy User? @relation("PasswordResetProcessedBy", fields: [processedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([processedById])
 }
 
 model Permission {
@@ -72,7 +156,7 @@ model Role {
 
   users       UserRole[]
   permissions RolePermission[]
-  positions PositionRole[]
+  positions   PositionRole[]
 }
 
 model UserRole {
@@ -103,13 +187,31 @@ model RolePermission {
   @@index([permissionId])
 }
 
-// Chat models
+// ─── Chat enums ────────────────────────────────────────────────────────────────
+
+enum RoomType {
+  DIRECT
+  GROUP
+}
+
+enum VisibilityScopeType {
+  ALL_MEMBERS
+  INCLUDE_MEMBERS
+  EXCLUDE_MEMBERS
+  ORG_UNIT
+  ORG_UNIT_TAG
+}
+
+// ─── Chat models ───────────────────────────────────────────────────────────────
+
 model Room {
   id          String    @id @default(uuid()) @db.Uuid
   creatorId   String    @db.Uuid
+  type        RoomType  @default(GROUP)
   title       String
   description String?
-  avatarUrl   String? @db.VarChar(2048)
+  avatarUrl   String?   @db.VarChar(2048)
+  archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -119,6 +221,7 @@ model Room {
   memberships UserRoomMembership[]
 
   @@index([creatorId])
+  @@index([type])
 }
 
 model Topic {
@@ -127,15 +230,15 @@ model Topic {
   creatorId   String    @db.Uuid
   title       String
   description String?
-  isPublic    Boolean   @default(false)
+  archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  room       Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  creator    User              @relation(fields: [creatorId], references: [id])
-  messages   Message[]
-  visibility TopicVisibility[]
+  room            Room                  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  creator         User                  @relation(fields: [creatorId], references: [id])
+  messages        Message[]
+  visibilityScope TopicVisibilityScope?
 
   @@index([roomId])
   @@index([creatorId])
@@ -166,16 +269,57 @@ model Message {
   @@index([parentId])
 }
 
-model TopicVisibility {
-  userId  String @db.Uuid
-  topicId String @db.Uuid
+// ─── Topic Visibility Scope (replaces TopicVisibility) ────────────────────────
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+model TopicVisibilityScope {
+  id              String              @id @default(uuid()) @db.Uuid
+  topicId         String              @unique @db.Uuid
+  scopeType       VisibilityScopeType
+  includeSubUnits Boolean             @default(false)
+  updatedAt       DateTime            @updatedAt
 
-  @@id([userId, topicId])
+  topic          Topic                      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  memberEntries  TopicVisibilityMember[]
+  orgUnitEntries TopicVisibilityOrgUnit[]
+  tagEntries     TopicVisibilityOrgUnitTag[]
+
   @@index([topicId])
 }
+
+model TopicVisibilityMember {
+  scopeId String @db.Uuid
+  userId  String @db.Uuid
+
+  scope TopicVisibilityScope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  user  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([scopeId, userId])
+  @@index([userId])
+}
+
+model TopicVisibilityOrgUnit {
+  scopeId   String @db.Uuid
+  orgUnitId String @db.Uuid
+
+  scope   TopicVisibilityScope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  orgUnit OrgUnit              @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+
+  @@id([scopeId, orgUnitId])
+  @@index([orgUnitId])
+}
+
+model TopicVisibilityOrgUnitTag {
+  scopeId String @db.Uuid
+  tagId   String @db.Uuid
+
+  scope TopicVisibilityScope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  tag   Tag                  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([scopeId, tagId])
+  @@index([tagId])
+}
+
+// ─── Read / Receive tracking ──────────────────────────────────────────────────
 
 model UserReadMessage {
   userId    String   @db.Uuid
@@ -201,6 +345,7 @@ model UserReceiveMessage {
   @@index([messageId])
 }
 
+// ─── Room RBAC ────────────────────────────────────────────────────────────────
 
 model RoomRole {
   id          String  @id @default(uuid()) @db.Uuid
@@ -251,8 +396,8 @@ model UserRoomMembership {
   @@index([roomRoleId])
 }
 
+// ─── Task models ──────────────────────────────────────────────────────────────
 
-// Task models
 enum TaskWorkStatus {
   PENDING
   ACCEPTED
@@ -268,16 +413,16 @@ enum TaskReviewStatus {
 }
 
 model Task {
-  id          String   @id @default(uuid()) @db.Uuid
-  creatorId   String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  creatorId   String    @db.Uuid
   title       String
   description String
   dueDate     DateTime? @db.Date
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  creator      User              @relation("UserCreatedTask",fields: [creatorId], references: [id])
+  creator      User              @relation("UserCreatedTask", fields: [creatorId], references: [id])
   participants TaskParticipant[]
 
   @@index([creatorId])
@@ -291,28 +436,30 @@ model TaskParticipant {
   workStatus   TaskWorkStatus
   reviewStatus TaskReviewStatus @default(PENDING)
   rating       Int?
+  submittedAt  DateTime?
 
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task         Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@id([userId, taskId])
   @@index([taskId])
 }
 
-// Event models
+// ─── Event models ─────────────────────────────────────────────────────────────
+
 model Event {
-  id          String   @id @default(uuid()) @db.Uuid
-  creatorId   String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  creatorId   String    @db.Uuid
   title       String
-  description String   @db.Text
+  description String    @db.Text
   address     String
   timeStart   DateTime
   timeEnd     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  creator      User              @relation("UserCreatedEvents", fields: [creatorId], references: [id])
+  creator      User               @relation("UserCreatedEvents", fields: [creatorId], references: [id])
   participants EventParticipant[]
 
   @@index([creatorId])
@@ -334,18 +481,19 @@ model EventParticipant {
   @@index([eventId])
 }
 
+// ─── Poll models ──────────────────────────────────────────────────────────────
 
-// Poll models
 model Poll {
-  id          String   @id @default(uuid()) @db.Uuid
-  creatorId   String   @db.Uuid
-  title       String
-  description String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  id              String    @id @default(uuid()) @db.Uuid
+  creatorId       String    @db.Uuid
+  title           String
+  description     String    @db.Text
+  allowVoteChange Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
-  creator      User             @relation("UserCreatedPolls", fields: [creatorId], references: [id])
+  creator      User              @relation("UserCreatedPolls", fields: [creatorId], references: [id])
   options      PollOption[]
   participants PollParticipant[]
 
@@ -353,12 +501,12 @@ model Poll {
 }
 
 model PollOption {
-  id        String   @id @default(uuid()) @db.Uuid
-  pollId    String   @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
+  pollId    String    @db.Uuid
   value     String
-  chosen    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  chosen    Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
@@ -368,10 +516,10 @@ model PollOption {
 }
 
 model PollParticipant {
-  userId          String @db.Uuid
-  pollId          String @db.Uuid
-  done            Boolean @default(false)
-  chosenOptionId  String? @db.Uuid
+  userId         String  @db.Uuid
+  pollId         String  @db.Uuid
+  done           Boolean @default(false)
+  chosenOptionId String? @db.Uuid
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
@@ -380,8 +528,8 @@ model PollParticipant {
   @@index([pollId])
 }
 
+// ─── Notification models ──────────────────────────────────────────────────────
 
-// Notification models
 enum NotificationEntityType {
   ROOM
   TOPIC
@@ -392,14 +540,14 @@ enum NotificationEntityType {
 }
 
 model Notification {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String                @id @default(uuid()) @db.Uuid
   type       String
   title      String
-  body       String   @db.Text
-  actorId    String?  @db.Uuid
+  body       String                @db.Text
+  actorId    String?               @db.Uuid
   entityType NotificationEntityType
-  entityId   String   @db.Uuid
-  createdAt  DateTime @default(now())
+  entityId   String                @db.Uuid
+  createdAt  DateTime              @default(now())
 
   actor      User?                   @relation("UserNotificationActor", fields: [actorId], references: [id])
   recipients NotificationRecipient[]
@@ -409,12 +557,12 @@ model Notification {
 }
 
 model NotificationRecipient {
-  notificationId String   @db.Uuid
-  userId         String   @db.Uuid
+  notificationId String    @db.Uuid
+  userId         String    @db.Uuid
 
   deliveredAt DateTime?
   readAt      DateTime?
-  isHidden    Boolean  @default(false)
+  isHidden    Boolean   @default(false)
 
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -425,40 +573,41 @@ model NotificationRecipient {
   @@index([readAt])
 }
 
+// ─── Organization models ──────────────────────────────────────────────────────
 
-
-// Organization models
 model Tag {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
-  createdAt DateTime @default(now())
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  createdAt DateTime  @default(now())
   deletedAt DateTime?
 
-  orgUnitTags OrgUnitTag[]
+  orgUnitTags          OrgUnitTag[]
+  topicVisibilityTags  TopicVisibilityOrgUnitTag[]
 }
 
 model OrgUnit {
-  id          String   @id @default(uuid()) @db.Uuid
-  parentId    String?  @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  parentId    String?   @db.Uuid
   name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   parent   OrgUnit?  @relation("OrgUnitHierarchy", fields: [parentId], references: [id])
   children OrgUnit[] @relation("OrgUnitHierarchy")
 
-  tags        OrgUnitTag[]
-  memberships UserOrgUnitMembership[]
+  tags                 OrgUnitTag[]
+  memberships          UserOrgUnitMembership[]
+  topicVisibilityUnits TopicVisibilityOrgUnit[]
 
   @@index([parentId])
   @@unique([parentId, name])
 }
 
 model OrgUnitTag {
-  orgUnitId String  @db.Uuid
-  tagId     String  @db.Uuid
+  orgUnitId String   @db.Uuid
+  tagId     String   @db.Uuid
   createdAt DateTime @default(now())
   deletedAt DateTime?
 
@@ -470,14 +619,14 @@ model OrgUnitTag {
 }
 
 model Position {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  memberships  UserOrgUnitMembership[]
+  memberships   UserOrgUnitMembership[]
   positionRoles PositionRole[]
 }
 
@@ -493,9 +642,9 @@ model PositionRole {
 }
 
 model UserOrgUnitMembership {
-  userId     String @db.Uuid
-  orgUnitId  String @db.Uuid
-  positionId String @db.Uuid
+  userId     String   @db.Uuid
+  orgUnitId  String   @db.Uuid
+  positionId String   @db.Uuid
   joinedAt   DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

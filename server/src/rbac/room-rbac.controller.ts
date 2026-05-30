@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GlobalPermissionGuard } from './guards/global-permission.guard';
 import { RequirePermission } from './decorators/require-permission.decorator';
@@ -33,7 +42,10 @@ export class RoomRbacController {
 
   @RequirePermission('rbac.roles.manage')
   @Put('roles/:roomRoleId')
-  updateRoomRole(@Param('roomRoleId') roomRoleId: string, @Body() dto: UpdateRoomRoleDto) {
+  updateRoomRole(
+    @Param('roomRoleId') roomRoleId: string,
+    @Body() dto: UpdateRoomRoleDto,
+  ) {
     return this.rbac.updateRoomRole(roomRoleId, dto);
   }
 

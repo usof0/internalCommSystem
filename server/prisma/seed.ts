@@ -10,6 +10,7 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 async function main() {
   // 1) Global permissions
   const permissions = [
+    { code: "admin.panel.access", module: "admin", description: "Access admin panel" },
     { code: "rbac.roles.manage", module: "rbac", description: "Manage roles" },
     { code: "rbac.permissions.manage", module: "rbac", description: "Manage permissions" },
     { code: "rbac.user_roles.manage", module: "rbac", description: "Manage user roles" },
@@ -18,15 +19,24 @@ async function main() {
     { code: "users.manage", module: "users", description: "Manage users (activate, block, update)" },
     { code: "users.delete", module: "users", description: "Delete users" },
     { code: "users.password.reset", module: "users", description: "Reset user passwords" },
+    // Room global permissions (legacy)
     { code: "room.create", module: "rooms", description: "Create rooms" },
     { code: "room.manage", module: "rooms", description: "Manage rooms (global)" },
+    // New room global permissions per chat API spec
+    { code: "room.update", module: "rooms", description: "Update any room metadata" },
+    { code: "room.delete", module: "rooms", description: "Soft-delete any room" },
+    { code: "room.members.manage", module: "rooms", description: "Add / remove / promote members in any room" },
+    { code: "room.topics.manage", module: "rooms", description: "Create / update / delete topics in any room" },
+    { code: "room.topic.visibility.manage", module: "rooms", description: "Set or patch topic visibility in any room" },
+    { code: "room.message.bin", module: "rooms", description: "Pin / unpin messages in any room" },
+    // Other modules
     { code: "org.manage", module: "org", description: "Manage org structure" },
     { code: "task.create", module: "tasks", description: "Create tasks" },
+    { code: "task.participants.view", module: "tasks", description: "View task participants and review results" },
     { code: "event.create", module: "events", description: "Create events" },
     { code: "poll.create", module: "polls", description: "Create polls" },
   ];
 
-  // Upsert permissions
   for (const p of permissions) {
     await prisma.permission.upsert({
       where: { code: p.code },
@@ -69,7 +79,7 @@ async function main() {
   }
 
   // 4) Super admin user
-  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL ?? "admin@local").trim().toLowerCase();
+  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL ?? "admin@local.com").trim().toLowerCase();
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "ChangeMe123!";
   const passwordHash = await bcrypt.hash(superAdminPassword, 12);
 
@@ -84,7 +94,6 @@ async function main() {
     },
   });
 
-  // Assign super_admin role to super admin user
   await prisma.userRole.upsert({
     where: { userId_roleId: { userId: superAdmin.id, roleId: superAdminRole.id } },
     update: {},
@@ -99,12 +108,19 @@ async function main() {
 
   // 5) Room-level permissions
   const roomPermissions = [
+    // Legacy
     { code: "room.topic.create", description: "Create topics in room" },
     { code: "room.message.create", description: "Create messages in room" },
     { code: "room.message.delete", description: "Delete messages in room" },
     { code: "room.member.invite", description: "Invite users to room" },
     { code: "room.member.kick", description: "Remove users from room" },
     { code: "room.settings.manage", description: "Manage room settings" },
+    // New per chat API spec
+    { code: "room.update", description: "Update room metadata" },
+    { code: "room.members.manage", description: "Manage room members" },
+    { code: "room.topics.manage", description: "Create / update / delete topics" },
+    { code: "room.topic.visibility.manage", description: "Manage topic visibility" },
+    { code: "room.message.bin", description: "Pin / unpin messages" },
   ];
 
   for (const p of roomPermissions) {
@@ -118,8 +134,14 @@ async function main() {
   // 6) Room roles
   const ownerRole = await prisma.roomRole.upsert({
     where: { name: "owner" },
-    update: { description: "Room owner" },
-    create: { name: "owner", description: "Room owner" },
+    update: { description: "Room owner — full control" },
+    create: { name: "owner", description: "Room owner — full control" },
+  });
+
+  const adminRoomRole = await prisma.roomRole.upsert({
+    where: { name: "admin" },
+    update: { description: "Room admin — manage members, topics, messages" },
+    create: { name: "admin", description: "Room admin — manage members, topics, messages" },
   });
 
   const moderatorRole = await prisma.roomRole.upsert({
@@ -143,14 +165,8 @@ async function main() {
     allRoomPerms.map((p) => [p.code, p.id]),
   );
 
-  async function setRoomRolePermissions(
-    roleId: string,
-    permissionCodes: string[],
-  ) {
-    await prisma.roleRoomPermission.deleteMany({
-      where: { roomRoleId: roleId },
-    });
-
+  async function setRoomRolePermissions(roleId: string, permissionCodes: string[]) {
+    await prisma.roleRoomPermission.deleteMany({ where: { roomRoleId: roleId } });
     await prisma.roleRoomPermission.createMany({
       data: permissionCodes.map((code) => ({
         roomRoleId: roleId,
@@ -160,24 +176,29 @@ async function main() {
     });
   }
 
-  await setRoomRolePermissions(
-    ownerRole.id,
-    roomPermissions.map((p) => p.code),
-  );
+  // Owner: all room permissions
+  await setRoomRolePermissions(ownerRole.id, roomPermissions.map((p) => p.code));
 
+  // Admin: all except legacy delete (admin can do everything owner can except delete room itself via room-level)
+  await setRoomRolePermissions(adminRoomRole.id, roomPermissions.map((p) => p.code));
+
+  // Moderator: limited set
   await setRoomRolePermissions(moderatorRole.id, [
     "room.topic.create",
     "room.message.create",
     "room.message.delete",
     "room.member.invite",
+    "room.topics.manage",
+    "room.message.bin",
   ]);
 
+  // Member: basic messaging
   await setRoomRolePermissions(memberRole.id, [
     "room.message.create",
   ]);
 
   console.log("Room RBAC seed complete:", {
-    roomRoles: [ownerRole.name, moderatorRole.name, memberRole.name],
+    roomRoles: [ownerRole.name, adminRoomRole.name, moderatorRole.name, memberRole.name],
     roomPermissions: roomPermissions.map((p) => p.code),
   });
 }

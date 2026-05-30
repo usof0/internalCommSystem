@@ -1,0 +1,1 @@
+export { RegistrationRequestsPage } from './RegistrationRequestsPage';

@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/global.css';
+
+@import '../layouts/AppLayout.css';
+@import '../layouts/TopBar.css';
+
+@import '../components/ui/Button.css';
+@import '../components/ui/Card.css';
+@import '../components/ui/Form.css';
+@import '../components/ui/Table.css';
+@import '../components/ui/PageHeader.css';
+@import '../components/ui/BackButton.css';
+@import '../components/Loading.css';
+@import '../components/States.css';
+
+@import '../pages/shared/AuthPage.css';
+@import '../pages/shared/ViewSwitcher.css';
+@import '../pages/shared/ListCards.css';
+
+@import '../pages/ProfilePage/ProfilePage.css';
+@import '../pages/ChatPage/ChatPage.css';
+@import '../pages/NotificationsPage/NotificationsPage.css';
+@import '../pages/TaskDetailsPage/TaskDetailsPage.css';
+
+@import '../pages/admin/AdminPage/AdminPage.css';
+@import '../pages/admin/UsersPage/UsersPage.css';
+@import '../pages/admin/UserDetailsPage/UserDetailsPage.css';

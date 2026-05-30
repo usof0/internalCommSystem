@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -42,7 +47,10 @@ export class AuthService {
       displayName: dto.displayName,
     });
 
-    const accessToken = this.signAccessToken({ sub: user.id, email: user.email });
+    const accessToken = this.signAccessToken({
+      sub: user.id,
+      email: user.email,
+    });
     return { user, accessToken };
   }
 
@@ -53,13 +61,16 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     if (user.deletedAt) throw new UnauthorizedException('Invalid credentials');
-    if (!user.isActive || user.isBlocked) throw new ForbiddenException('Account is disabled');
+    if (!user.isActive || user.isBlocked)
+      throw new ForbiddenException('Account is disabled');
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
-    const accessToken = this.signAccessToken({ sub: user.id, email: user.email });
+    const accessToken = this.signAccessToken({
+      sub: user.id,
+      email: user.email,
+    });
     return { accessToken };
   }
 }
-
