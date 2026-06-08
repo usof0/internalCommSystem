@@ -20,6 +20,8 @@ ENV NODE_ENV=production
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/tsconfig*.json ./
+
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
