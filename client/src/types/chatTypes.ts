@@ -215,6 +215,12 @@ export interface CreateRoomRequest {
    * For DIRECT rooms exactly one userId must be provided.
    */
   memberIds?: string[];
+  /** Add initial members from selected organizational units. GROUP rooms only. */
+  orgUnitIds?: string[];
+  /** Add initial members from organizational units marked with selected tags. GROUP rooms only. */
+  orgUnitTagIds?: string[];
+  /** Include child organizational units when resolving initial members. GROUP rooms only. */
+  includeSubUnits?: boolean;
   /**
    * Optional room role to assign to every added member.
    * Defaults to the system "MEMBER" role when omitted.

@@ -1487,6 +1487,47 @@
   font-weight: 600;
 }
 
+.create-room-members {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 72%, var(--bg-primary));
+}
+
+.create-room-members__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.create-room-members__header small {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.create-room-members__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.create-room-members__subunits {
+  margin-top: 0.625rem;
+}
+
+@media (max-width: 720px) {
+  .create-room-members__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .create-room-error {
   font-size: 0.8125rem;
   color: var(--danger);

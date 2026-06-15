@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -55,6 +56,20 @@ export class CreateRoomDto {
   @IsArray()
   @IsUUID('4', { each: true })
   memberIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  orgUnitIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  orgUnitTagIds?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  includeSubUnits?: boolean;
 
   @IsOptional()
   @IsUUID('4')

@@ -473,6 +473,16 @@ export class TopicsService {
       tagEntries?: { tagId: string }[];
     } | null,
   ): Promise<boolean> {
+    const privilegedMembership = await this.prisma.userRoomMembership.findUnique({
+      where: { userId_roomId: { userId, roomId } },
+      select: { roomRole: { select: { name: true } } },
+    });
+
+    const roomRoleName = privilegedMembership?.roomRole.name.toLowerCase();
+    if (roomRoleName === 'owner' || roomRoleName === 'admin') {
+      return true;
+    }
+
     if (!scope) {
       // No scope configured → default to ALL_MEMBERS (visible to all room members)
       return true;

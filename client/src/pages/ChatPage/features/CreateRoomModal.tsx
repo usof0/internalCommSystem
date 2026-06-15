@@ -6,6 +6,8 @@ import { useCreateRoomMutation, useLazyGetTopicsQuery } from '../../../api/chatA
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { UserPicker } from './UserPicker';
+import { OrgUnitPicker } from './OrgUnitPicker';
+import { TagPicker } from './TagPicker';
 import type { RoomType } from '../../../types';
 
 interface Props {
@@ -22,6 +24,10 @@ export const CreateRoomModal: React.FC<Props> = ({ open, onClose }) => {
   const [type, setType] = useState<RoomType>('GROUP');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [groupMemberIds, setGroupMemberIds] = useState<string[]>([]);
+  const [orgUnitIds, setOrgUnitIds] = useState<string[]>([]);
+  const [orgUnitTagIds, setOrgUnitTagIds] = useState<string[]>([]);
+  const [includeSubUnits, setIncludeSubUnits] = useState(false);
   // DIRECT: exactly one selected user ID
   const [directUserIds, setDirectUserIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +36,10 @@ export const CreateRoomModal: React.FC<Props> = ({ open, onClose }) => {
     setType('GROUP');
     setTitle('');
     setDescription('');
+    setGroupMemberIds([]);
+    setOrgUnitIds([]);
+    setOrgUnitTagIds([]);
+    setIncludeSubUnits(false);
     setDirectUserIds([]);
     setError(null);
     onClose();
@@ -55,6 +65,10 @@ export const CreateRoomModal: React.FC<Props> = ({ open, onClose }) => {
               type: 'GROUP',
               title: title.trim(),
               description: description.trim() || undefined,
+              memberIds: groupMemberIds.length ? groupMemberIds : undefined,
+              orgUnitIds: orgUnitIds.length ? orgUnitIds : undefined,
+              orgUnitTagIds: orgUnitTagIds.length ? orgUnitTagIds : undefined,
+              includeSubUnits,
             }
           : {
               type: 'DIRECT',
@@ -87,7 +101,7 @@ export const CreateRoomModal: React.FC<Props> = ({ open, onClose }) => {
         </h3>
       }
       onClose={handleClose}
-      maxWidth={480}
+      maxWidth={640}
       footer={
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
           <Button onClick={handleClose} disabled={isLoading}>
@@ -152,6 +166,40 @@ export const CreateRoomModal: React.FC<Props> = ({ open, onClose }) => {
                 rows={3}
                 maxLength={500}
               />
+            </div>
+            <div className="create-room-members">
+              <div className="create-room-members__header">
+                <span>Участники комнаты</span>
+                <small>
+                  {groupMemberIds.length + orgUnitIds.length + orgUnitTagIds.length} выбрано
+                </small>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Отдельные пользователи</label>
+                <UserPicker
+                  selectedIds={groupMemberIds}
+                  onChange={setGroupMemberIds}
+                  excludeIds={currentUserId ? [currentUserId] : []}
+                />
+              </div>
+              <div className="create-room-members__grid">
+                <div className="form-group">
+                  <label className="form-label">Подразделения</label>
+                  <OrgUnitPicker selectedIds={orgUnitIds} onChange={setOrgUnitIds} />
+                  <label className="bulk-add-subunits create-room-members__subunits">
+                    <input
+                      type="checkbox"
+                      checked={includeSubUnits}
+                      onChange={(e) => setIncludeSubUnits(e.target.checked)}
+                    />
+                    Включить дочерние подразделения
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Теги подразделений</label>
+                  <TagPicker selectedIds={orgUnitTagIds} onChange={setOrgUnitTagIds} />
+                </div>
+              </div>
             </div>
           </>
         )}

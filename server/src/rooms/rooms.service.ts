@@ -260,6 +260,9 @@ export class RoomsService {
       description?: string;
       avatarUrl?: string;
       memberIds?: string[];
+      orgUnitIds?: string[];
+      orgUnitTagIds?: string[];
+      includeSubUnits?: boolean;
       memberRoomRoleId?: string;
       initialTopics?: Array<{
         title: string;
@@ -290,8 +293,26 @@ export class RoomsService {
 
     const memberRole = await this.resolveRoleId(data.memberRoomRoleId);
 
+    if (
+      data.type === 'DIRECT' &&
+      (data.orgUnitIds?.length || data.orgUnitTagIds?.length)
+    ) {
+      throw new BadRequestException(
+        'Org unit and tag based members are only supported for group rooms',
+      );
+    }
+
+    const resolvedOrgMemberIds =
+      data.type === 'GROUP' && (data.orgUnitIds?.length || data.orgUnitTagIds?.length)
+        ? await this.org.resolveByOrgIds({
+            orgUnitIds: data.orgUnitIds,
+            orgUnitTagIds: data.orgUnitTagIds,
+            includeSubUnits: data.includeSubUnits ?? false,
+          })
+        : [];
+
     const allMemberIds = Array.from(
-      new Set([creatorId, ...(data.memberIds ?? [])]),
+      new Set([creatorId, ...(data.memberIds ?? []), ...resolvedOrgMemberIds]),
     );
 
     // Validate all extra members exist
@@ -358,6 +379,18 @@ export class RoomsService {
     });
 
     const result = await this.getRoom(room.id, creatorId);
+    const invitedMemberIds = allMemberIds.filter((userId) => userId !== creatorId);
+    if (invitedMemberIds.length > 0) {
+      this.notifications.create({
+        type: 'ROOM_INVITATION',
+        title: 'You were added to a room',
+        body: `You have been added to "${result.title}"`,
+        actorId: creatorId,
+        entityType: 'ROOM',
+        entityId: result.id,
+        recipientIds: invitedMemberIds,
+      }).catch(() => {});
+    }
     return { room: result, isExisting: false };
   }
 
