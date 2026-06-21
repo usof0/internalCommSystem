@@ -1,6 +1,6 @@
 # Internal Communication System
 
-Internal Communication System is a full-stack web platform for university or organization communication and operations. It combines realtime chat, tasks, events, polls, notifications, user profiles, and an administrative control panel.
+Internal Communication System is a web platform for university or organization communication and operations. It combines realtime chat, tasks, events, polls, notifications, user profiles, and an administrative control panel.
 
 ## Project Structure
 
@@ -9,9 +9,10 @@ Internal Communication System is a full-stack web platform for university or org
 ├── client/                 # React + Vite frontend
 ├── server/                 # NestJS API + Prisma
 ├── docker-compose.yml      # Production-oriented Compose stack
+├── ER.svg                  # DB ER diagram
+├── .env.example            # Example structure for .env file
 ├── Dockerfile              # Root-compatible API Dockerfile
-├── deployment.md           # Detailed Docker and VPS deployment notes
-└── README_AR.md            # Arabic server deployment guide
+└── deployment.md           # Detailed Docker and VPS deployment notes 
 ```
 
 ## Main Features
