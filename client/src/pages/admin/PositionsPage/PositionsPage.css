@@ -1,0 +1,426 @@
+.admin-positions-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.positions-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 8%, var(--bg-secondary)),
+      var(--bg-primary)
+    );
+  box-shadow: var(--shadow-sm);
+}
+
+.positions-hero span,
+.position-details-header > div:first-child > span {
+  display: inline-flex;
+  margin-bottom: 0.35rem;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.positions-hero h1,
+.position-details-header h2,
+.position-create-panel__header h2,
+.positions-panel-header h2,
+.position-role-column__header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.14;
+}
+
+.positions-hero h1 {
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+.positions-hero p,
+.position-details-header p,
+.position-create-panel__header p,
+.position-role-toolbar span,
+.position-links-grid span {
+  margin: 0.45rem 0 0;
+  color: var(--text-secondary);
+}
+
+.positions-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.positions-summary > div,
+.position-links-grid > div,
+.position-create-panel,
+.positions-list-panel,
+.position-details-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.positions-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  min-width: 0;
+}
+
+.positions-summary strong {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.positions-summary span {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.position-create-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.position-create-panel__header {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.position-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.position-form-grid label,
+.positions-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.position-form-grid label span,
+.positions-search span {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.position-create-panel__actions,
+.positions-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.positions-error-message {
+  padding: 0.8rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.positions-workspace {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.positions-list-panel,
+.position-details-panel {
+  overflow: hidden;
+}
+
+.positions-list-panel {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.positions-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.positions-panel-header p {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.positions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.positions-list-item {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.positions-list-item:hover {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  background: var(--selected-bg);
+}
+
+.positions-list-item--active {
+  border-color: color-mix(in srgb, var(--primary) 46%, var(--border));
+  background: color-mix(in srgb, var(--selected-bg) 84%, var(--primary));
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.positions-list-item span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.positions-list-item strong,
+.position-role-card strong {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.positions-list-item small {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.position-details-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.position-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.position-details-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.position-edit-form {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.position-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.position-links-grid > div {
+  padding: 0.9rem;
+  background: color-mix(in srgb, var(--bg-secondary) 80%, var(--bg-primary));
+}
+
+.position-links-grid strong {
+  display: block;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.position-role-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+}
+
+.position-role-toolbar strong {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.position-role-toolbar span {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.position-role-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.position-role-column {
+  display: flex;
+  min-height: 24rem;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+}
+
+.position-role-column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 9%, var(--bg-secondary));
+}
+
+.position-role-column__header span {
+  display: inline-flex;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.position-role-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow-y: auto;
+  padding: 0.85rem;
+}
+
+.position-role-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+
+.position-role-card p {
+  margin: 0.3rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.positions-inline-empty {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.positions-confirm-title {
+  color: var(--primary);
+  font-weight: 900;
+}
+
+.positions-confirm-title--danger {
+  color: var(--danger);
+}
+
+.positions-confirm-message {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+@media (max-width: 1024px) {
+  .positions-workspace,
+  .position-role-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .positions-list-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .positions-hero,
+  .position-details-header {
+    flex-direction: column;
+  }
+
+  .positions-summary,
+  .position-form-grid,
+  .position-edit-form,
+  .position-links-grid,
+  .position-role-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .positions-hero .btn,
+  .position-details-actions,
+  .position-details-actions .btn,
+  .position-role-card .btn {
+    width: 100%;
+  }
+
+  .position-role-card {
+    flex-direction: column;
+  }
+}
