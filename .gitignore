@@ -1,4 +1,24 @@
-info
-images
-docs
+# Local documentation/drafts not intended for the repository
+info/
+docs/
+
+# Environment files with machine-specific or secret values
 .env
+.env.*
+**/.env
+**/.env.*
+
+# Keep example environment templates versioned
+!.env.example
+!**/.env.example
+!**/.env.production.example
+
+# Dependencies and generated build output
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
